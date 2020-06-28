@@ -163,6 +163,7 @@ static ResolutionPreset getResolutionPresetForString(NSString *preset) {
 @property(nonatomic, copy) void (^onFrameAvailable)();
 @property BOOL enableAudio;
 @property int flashMode;
+@property(assign, nonatomic) BOOL isTorchEnabled;
 @property BOOL enableAutoExposure;
 @property BOOL autoFocusEnabled;
 @property(nonatomic) FlutterEventChannel *eventChannel;
@@ -707,6 +708,23 @@ FourCharCode const videoFormat = kCVPixelFormatType_32BGRA;
 
 - (void)setFlashMode:(int)flashMode level:(float)level {
     _flashMode = flashMode;
+
+    AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if ([device hasTorch]) {
+      [device lockForConfiguration:nil];
+      if(flashMode == 2) {
+        NSError *anyError;
+        BOOL success = [device setTorchModeOnWithLevel:AVCaptureMaxAvailableTorchLevel
+                                                error:&anyError];
+        [device unlockForConfiguration];
+        if (success) {
+          _isTorchEnabled = true;
+        }
+      } else {
+        [device setTorchMode:AVCaptureTorchModeOff];
+        _isTorchEnabled = false;
+      }
+    }
 }
 
 - (void)setAutoExposureMode:(BOOL)enable {
@@ -826,6 +844,14 @@ FourCharCode const videoFormat = kCVPixelFormatType_32BGRA;
 
     [_videoWriter addInput:_audioWriterInput];
     [_audioOutput setSampleBufferDelegate:self queue:_dispatchQueue];
+  }
+
+  // When starting video capture the torch will be turned off, so re-enable it here so it's started
+  // in time for recording to start.
+  if (_isTorchEnabled) {
+    [self.captureDevice lockForConfiguration:nil];
+    [self.captureDevice setTorchModeOnWithLevel:AVCaptureMaxAvailableTorchLevel error:nil];
+    [self.captureDevice unlockForConfiguration];
   }
 
   [_videoWriter addInput:_videoWriterInput];

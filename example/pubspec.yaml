@@ -1,14 +1,17 @@
 name: camera_example
 description: Demonstrates how to use the camera plugin.
 
+environment:
+  sdk: ">=2.3.0 <3.0.0"
+
 dependencies:
-  camera:
-    path: ../
-  path_provider: ^0.5.0
   flutter:
     sdk: flutter
+  camera:
+    path: ../
+  path_provider: ^1.6.9
   video_player: ^0.10.0
-  e2e: "^0.2.0"
+  e2e: ^0.2.0
 
 dev_dependencies:
   flutter_test:
@@ -18,7 +21,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-environment:
-  sdk: ">=2.0.0-dev.28.0 <3.0.0"
-  flutter: ">=1.9.1+hotfix.4 <2.0.0"

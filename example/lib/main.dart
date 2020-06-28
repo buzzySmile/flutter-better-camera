@@ -43,6 +43,8 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   VideoPlayerController videoController;
   VoidCallback videoPlayerListener;
   bool enableAudio = true;
+  bool enableTorch = false;
+  bool torchSupported = false;
   FlashMode flashMode = FlashMode.off;
 
   @override
@@ -112,7 +114,12 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
             ),
           ),
           _captureControlRowWidget(),
-          _toggleAudioWidget(),
+          Row(
+            children: [
+              _toggleAudioWidget(),
+              _toggleTorchWidget(),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.all(5.0),
             child: Row(
@@ -262,6 +269,36 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     );
   }
 
+  /// Toggle torch mode
+  Widget _toggleTorchWidget() {
+    return Opacity(
+      opacity: torchSupported ? 1.0 : 0.2,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 25),
+        child: Row(
+          children: <Widget>[
+            const Text('Toggle Torch:'),
+            Switch(
+              value: enableTorch,
+              onChanged: (bool value) async {
+                if (controller == null || !torchSupported) {
+                  return;
+                }
+
+                setState(() => enableTorch = value);
+                if (enableTorch) {
+                  await controller.setFlashMode(FlashMode.torch);
+                } else {
+                  await controller.setFlashMode(FlashMode.off);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Flash Toggle Button
   Widget _flashButton() {
     IconData iconData = Icons.flash_off;
@@ -284,7 +321,6 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
   /// Toggle Flash
   Future<void> _onFlashButtonPressed() async {
-    bool hasFlash = false;
     if (flashMode == FlashMode.off || flashMode == FlashMode.torch) {
       // Turn on the flash for capture
       flashMode = FlashMode.alwaysFlash;
@@ -355,6 +391,8 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 
     try {
       await controller.initialize();
+      final hasTorch = await controller.hasFlash;
+      setState(() => torchSupported = hasTorch);
     } on CameraException catch (e) {
       _showCameraException(e);
     }
@@ -533,11 +571,10 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 class CameraApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return
-      MaterialApp(
-        theme: ThemeData(
-          accentTextTheme: TextTheme(body2: TextStyle(color: Colors.white)),
-        ),
+    return MaterialApp(
+      theme: ThemeData(
+        accentTextTheme: TextTheme(bodyText1: TextStyle(color: Colors.white)),
+      ),
       home: CameraExampleHome(),
     );
   }
@@ -576,7 +613,7 @@ class _ZoomableWidgetState extends State<ZoomableWidget> {
   bool showZoom = false;
   Timer t1;
 
-  bool handleZoom(newZoom){
+  bool handleZoom(newZoom) {
     if (newZoom >= 1) {
       if (newZoom > 10) {
         return false;
@@ -598,11 +635,10 @@ class _ZoomableWidgetState extends State<ZoomableWidget> {
     }
     widget.onZoom(zoom);
     return true;
-
   }
+
   @override
   Widget build(BuildContext context) {
-
     return GestureDetector(
         onScaleStart: (scaleDetails) {
           print('scalStart');
@@ -646,36 +682,36 @@ class _ZoomableWidgetState extends State<ZoomableWidget> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
                   Align(
-                      alignment: Alignment.bottomCenter,
-                      child:
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          valueIndicatorTextStyle: TextStyle(
-                              color: Colors.amber, letterSpacing: 2.0, fontSize: 30),
-                          valueIndicatorColor: Colors.blue,
-                          // This is what you are asking for
-                          inactiveTrackColor: Color(0xFF8D8E98),
-                          // Custom Gray Color
-                          activeTrackColor: Colors.white,
-                          thumbColor: Colors.red,
-                          overlayColor: Color(0x29EB1555),
-                          // Custom Thumb overlay Color
-                          thumbShape:
-                          RoundSliderThumbShape(enabledThumbRadius: 12.0),
-                          overlayShape:
-                          RoundSliderOverlayShape(overlayRadius: 20.0),
-
-                        ),
-                        child: Slider(
-                          value: zoom,
-                          onChanged: (double newValue) {
-                            handleZoom(newValue);
-                          },
-                          label: "$zoom",
-                          min: 1,
-                          max: 10,
-                        ),
+                    alignment: Alignment.bottomCenter,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        valueIndicatorTextStyle: TextStyle(
+                            color: Colors.amber,
+                            letterSpacing: 2.0,
+                            fontSize: 30),
+                        valueIndicatorColor: Colors.blue,
+                        // This is what you are asking for
+                        inactiveTrackColor: Color(0xFF8D8E98),
+                        // Custom Gray Color
+                        activeTrackColor: Colors.white,
+                        thumbColor: Colors.red,
+                        overlayColor: Color(0x29EB1555),
+                        // Custom Thumb overlay Color
+                        thumbShape:
+                            RoundSliderThumbShape(enabledThumbRadius: 12.0),
+                        overlayShape:
+                            RoundSliderOverlayShape(overlayRadius: 20.0),
                       ),
+                      child: Slider(
+                        value: zoom,
+                        onChanged: (double newValue) {
+                          handleZoom(newValue);
+                        },
+                        label: "$zoom",
+                        min: 1,
+                        max: 10,
+                      ),
+                    ),
                   ),
                 ],
               )),
