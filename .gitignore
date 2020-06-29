@@ -31,9 +31,8 @@ jks/
 .packages
 .pub-cache/
 .pub/
-/build/
-build/
-example/build
+**/build/
+example/.flutter-plugins-dependencies
 
 # Android related
 **/android/**/gradle-wrapper.jar
