@@ -371,7 +371,8 @@ public class Camera {
             break;
           }
           if (af == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED ||
-                  af == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED) {
+                  af == CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED ||
+                  af == CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED) {
             Integer ae = result.get(CaptureResult.CONTROL_AE_STATE);
             if (ae == null || ae == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
               setState(STATE_CAPTURING);
@@ -564,6 +565,8 @@ public class Camera {
 
       captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getMediaOrientation());
 
+      // Set zoom level
+      captureBuilder.set(CaptureRequest.SCALER_CROP_REGION, mPreviewRequestBuilder.get(CaptureRequest.SCALER_CROP_REGION));
 
       mCaptureSession.capture(
           captureBuilder.build(),
@@ -613,6 +616,26 @@ public class Camera {
 
     // Create a new capture builder.
     mPreviewRequestBuilder = cameraDevice.createCaptureRequest(templateType);
+
+    if (sensorSensitivity != null || lensAperture != null || sensorExposure != null) {
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+
+        if (sensorSensitivity != null) {
+            mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, sensorSensitivity);
+        }
+        if (lensAperture != null) {
+            mPreviewRequestBuilder.set(CaptureRequest.LENS_APERTURE, lensAperture);
+        }
+        if (sensorExposure != null) {
+            mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, sensorExposure);
+        }
+    }
+
+    if (whiteBalance != null) {
+        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
+        mPreviewRequestBuilder.set(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_TRANSFORM_MATRIX);
+        mPreviewRequestBuilder.set(CaptureRequest.COLOR_CORRECTION_GAINS, colorTemperature(whiteBalance));
+    }
 
     // Build Flutter surface to render to
     SurfaceTexture surfaceTexture = flutterTexture.surfaceTexture();
@@ -889,12 +912,14 @@ public class Camera {
   }
 
   public void startPreview() throws CameraAccessException {
-    createCaptureSession(CameraDevice.TEMPLATE_PREVIEW, pictureImageReader.getSurface());
+    if (pictureImageReader != null) // <= add this line as @elviskuo07 mentioned.
+        createCaptureSession(CameraDevice.TEMPLATE_PREVIEW, pictureImageReader.getSurface());
   }
 
   public void startPreviewWithImageStream(EventChannel imageStreamChannel)
       throws CameraAccessException {
-    createCaptureSession(CameraDevice.TEMPLATE_RECORD, imageStreamReader.getSurface());
+    if (pictureImageReader != null) { // <= add this line as @elviskuo07 mentioned.
+        createCaptureSession(CameraDevice.TEMPLATE_RECORD, imageStreamReader.getSurface());
 
     imageStreamChannel.setStreamHandler(
         new EventChannel.StreamHandler() {
@@ -908,6 +933,7 @@ public class Camera {
             imageStreamReader.setOnImageAvailableListener(null, null);
           }
         });
+    }
   }
 
   private void setImageStreamImageAvailableListener(final EventChannel.EventSink imageStreamSink) {
