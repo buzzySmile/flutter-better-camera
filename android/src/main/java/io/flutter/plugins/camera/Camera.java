@@ -631,12 +631,6 @@ public class Camera {
         }
     }
 
-    if (whiteBalance != null) {
-        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF);
-        mPreviewRequestBuilder.set(CaptureRequest.COLOR_CORRECTION_MODE, CaptureRequest.COLOR_CORRECTION_MODE_TRANSFORM_MATRIX);
-        mPreviewRequestBuilder.set(CaptureRequest.COLOR_CORRECTION_GAINS, colorTemperature(whiteBalance));
-    }
-
     // Build Flutter surface to render to
     SurfaceTexture surfaceTexture = flutterTexture.surfaceTexture();
     surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
