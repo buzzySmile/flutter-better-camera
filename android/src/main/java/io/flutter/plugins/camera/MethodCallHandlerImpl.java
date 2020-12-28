@@ -173,11 +173,7 @@ final class MethodCallHandlerImpl implements MethodChannel.MethodCallHandler {
       }
       case "hasFlash":
       {
-        if(camera != null) {
-          result.success(camera.hasFlash());
-        } else {
-          result.success(false);
-        }
+        result.success(hasFlash());
         break;
       }
 
